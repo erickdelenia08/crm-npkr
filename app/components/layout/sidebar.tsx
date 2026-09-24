@@ -27,7 +27,7 @@ export type UserRole =
 interface SidebarProps {
     isOpen: boolean
     onClose: () => void
-    userRole?: UserRole
+    userRole?: string
 }
 
 export function Sidebar({ isOpen, onClose, userRole = "ADMIN" }: SidebarProps) {

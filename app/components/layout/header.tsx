@@ -10,12 +10,14 @@ import {
     Settings,
     ChevronDown,
 } from "lucide-react"
-
+import { signOut } from 'next-auth/react';
+import { User as UserSesion } from '@/generated/prisma';
 interface HeaderProps {
     onOpenSidebar: () => void
+    user: UserSesion
 }
 
-export function Header({ onOpenSidebar }: HeaderProps) {
+export function Header({ onOpenSidebar, user }: HeaderProps) {
     const [isProfileOpen, setIsProfileOpen] = useState(false)
     const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -68,15 +70,15 @@ export function Header({ onOpenSidebar }: HeaderProps) {
                         className="flex items-center gap-2 p-1 pl-1.5 hover:bg-slate-100/80 rounded-full transition-all group border border-transparent hover:border-slate-200/60"
                     >
                         <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 text-white font-bold text-[11px] flex items-center justify-center shrink-0 shadow-sm">
-                            EM
+                            {user.name?.charAt(0).toUpperCase() || "U"}
                         </div>
 
                         <div className="hidden md:block text-left pr-1">
                             <p className="text-xs font-semibold text-slate-800 leading-none">
-                                Elin Marketing
+                                {user.name}
                             </p>
                             <span className="text-[10px] text-slate-400 leading-none">
-                                Internal Marketing
+                                {user.email}
                             </span>
                         </div>
 
@@ -88,10 +90,10 @@ export function Header({ onOpenSidebar }: HeaderProps) {
                         <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl border border-slate-100 shadow-xl shadow-slate-200/50 py-1.5 z-50 animate-in fade-in-50 zoom-in-95">
                             <div className="px-4 py-2 border-b border-slate-100">
                                 <p className="text-xs font-bold text-slate-900">
-                                    Elin Marketing
+                                    {user.name}
                                 </p>
                                 <p className="text-[11px] text-slate-400">
-                                    elin@pemasaran.com
+                                    {user.email}
                                 </p>
                             </div>
 
@@ -113,7 +115,7 @@ export function Header({ onOpenSidebar }: HeaderProps) {
                                 type="button"
                                 onClick={() => {
                                     setIsProfileOpen(false)
-                                    alert("Logout berhasil")
+                                    signOut({ callbackUrl: '/login' })
                                 }}
                                 className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50/80 transition-colors text-left"
                             >

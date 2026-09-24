@@ -1,36 +1,157 @@
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 
-type Role = "ADMIN" | "MARKETING" | "STAFF";
+type Role =
+    | "ADMIN"
+    | "MARKETING"
+    | "DIGITAL_MARKETING"
+    | "FIELD_SUPERVISOR"
+    | "MANAGER"
+    | "DIRECTOR";
 
 /**
  * Route yang hanya bisa diakses oleh role tertentu.
  *
- * Urutan penting:
- * route yang lebih spesifik diletakkan lebih dulu.
+ * Catatan:
+ * Proxy ini mengatur akses LEVEL HALAMAN.
+ * Permission aksi seperti create/update/delete sebaiknya
+ * tetap dicek di server/API.
  */
 const protectedRoutes: Record<string, Role[]> = {
+    // ==========================================
+    // ADMIN ONLY
+    // ==========================================
+
     "/users": ["ADMIN"],
     "/audit-logs": ["ADMIN"],
-    "/settings": ["ADMIN"],
 
-    "/leads": ["ADMIN", "MARKETING"],
-    "/customers": ["ADMIN", "MARKETING"],
-    "/activities": ["ADMIN", "MARKETING"],
-    "/reports": ["ADMIN", "MARKETING"],
+    // ==========================================
+    // CUSTOMER
+    // ==========================================
 
-    "/units": ["ADMIN", "MARKETING", "STAFF"],
-    "/projects": ["ADMIN", "MARKETING", "STAFF"],
+    "/customers": [
+        "ADMIN",
+        "MARKETING",
+        "DIGITAL_MARKETING",
+        "MANAGER",
+        "DIRECTOR",
+    ],
+
+    // ==========================================
+    // LEADS
+    // ==========================================
+
+    "/leads": [
+        "ADMIN",
+        "MARKETING",
+        "DIGITAL_MARKETING",
+        "MANAGER",
+        "DIRECTOR",
+    ],
+
+    // ==========================================
+    // ACTIVITIES
+    // ==========================================
+
+    "/activities": [
+        "ADMIN",
+        "MARKETING",
+        "DIGITAL_MARKETING",
+        "MANAGER",
+        "DIRECTOR",
+    ],
+
+    // ==========================================
+    // REPORTS
+    // ==========================================
+
+    "/reports": [
+        "ADMIN",
+        "MARKETING",
+        "DIGITAL_MARKETING",
+        "FIELD_SUPERVISOR",
+        "MANAGER",
+        "DIRECTOR",
+    ],
+
+    // ==========================================
+    // UNITS
+    // ==========================================
+
+    "/units": [
+        "ADMIN",
+        "MARKETING",
+        "DIGITAL_MARKETING",
+        "FIELD_SUPERVISOR",
+        "MANAGER",
+        "DIRECTOR",
+    ],
+
+    // ==========================================
+    // PROJECTS
+    // ==========================================
+
+    "/projects": [
+        "ADMIN",
+        "MARKETING",
+        "DIGITAL_MARKETING",
+        "FIELD_SUPERVISOR",
+        "MANAGER",
+        "DIRECTOR",
+    ],
+
+    // ==========================================
+    // PRODUCTS
+    // ==========================================
+
+    "/products": [
+        "ADMIN",
+        "MARKETING",
+        "DIGITAL_MARKETING",
+        "FIELD_SUPERVISOR",
+        "MANAGER",
+        "DIRECTOR",
+    ],
+
+    // ==========================================
+    // SETTINGS
+    // ==========================================
+
+    "/settings": [
+        "ADMIN",
+        "MARKETING",
+        "DIGITAL_MARKETING",
+        "FIELD_SUPERVISOR",
+        "MANAGER",
+        "DIRECTOR",
+    ],
+
+    // ==========================================
+    // PROFILE
+    // ==========================================
+
+    "/profile": [
+        "ADMIN",
+        "MARKETING",
+        "DIGITAL_MARKETING",
+        "FIELD_SUPERVISOR",
+        "MANAGER",
+        "DIRECTOR",
+    ],
 };
 
 /**
  * Cari permission berdasarkan pathname.
  *
  * Contoh:
- * /users              → ADMIN
- * /users/123          → ADMIN
- * /leads              → ADMIN + MARKETING
- * /leads/123          → ADMIN + MARKETING
+ *
+ * /users
+ * /users/123
+ *      → ADMIN
+ *
+ * /leads
+ * /leads/123
+ *      → role Lead
  */
 function getAllowedRoles(pathname: string): Role[] | undefined {
     const matchedRoute = Object.keys(protectedRoutes)
@@ -58,6 +179,10 @@ export default auth((req) => {
     const isHomeRoute = pathname === "/";
     const isLoginRoute = pathname === "/login";
 
+    // ==========================================
+    // DEBUG
+    // ==========================================
+
     console.log("========== PROXY ==========");
     console.log("PATH:", pathname);
     console.log("isLoggedIn:", isLoggedIn);
@@ -77,7 +202,7 @@ export default auth((req) => {
             );
         }
 
-        // Halaman login boleh diakses
+        // Login boleh diakses
         if (isLoginRoute) {
             return NextResponse.next();
         }
@@ -92,21 +217,36 @@ export default auth((req) => {
     // USER SUDAH LOGIN
     // ==========================================
 
+    const validRoles: Role[] = [
+        "ADMIN",
+        "MARKETING",
+        "DIGITAL_MARKETING",
+        "FIELD_SUPERVISOR",
+        "MANAGER",
+        "DIRECTOR",
+    ];
+
     // Role tidak valid
-    if (!role || !["ADMIN", "MARKETING", "STAFF"].includes(role)) {
+    if (!role || !validRoles.includes(role)) {
         return NextResponse.redirect(
             new URL("/login", nextUrl)
         );
     }
 
-    // "/" → dashboard
+    // ==========================================
+    // ROOT → DASHBOARD
+    // ==========================================
+
     if (isHomeRoute) {
         return NextResponse.redirect(
             new URL("/dashboard", nextUrl)
         );
     }
 
-    // "/login" → dashboard
+    // ==========================================
+    // LOGIN → DASHBOARD
+    // ==========================================
+
     if (isLoginRoute) {
         return NextResponse.redirect(
             new URL("/dashboard", nextUrl)
@@ -120,19 +260,19 @@ export default auth((req) => {
     const allowedRoles = getAllowedRoles(pathname);
 
     // Route tidak memiliki permission khusus
-    // → selama sudah login, boleh masuk.
+    // → user yang sudah login boleh masuk.
     if (!allowedRoles) {
         return NextResponse.next();
     }
 
-    // Role tidak memiliki akses
+    // Role tidak punya akses
     if (!allowedRoles.includes(role)) {
         return NextResponse.redirect(
             new URL("/dashboard", nextUrl)
         );
     }
 
-    // Role memiliki akses
+    // Role punya akses
     return NextResponse.next();
 });
 
@@ -141,4 +281,3 @@ export const config = {
         "/((?!api|_next/static|_next/image|favicon.ico).*)",
     ],
 };
-
