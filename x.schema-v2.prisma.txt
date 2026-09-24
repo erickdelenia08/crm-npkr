@@ -1,0 +1,584 @@
+// generator client {
+//   provider = "prisma-client-js"
+//   output   = "../generated/prisma"
+// }
+
+// datasource db {
+//   provider = "mysql"
+// }
+
+// // ============================================================
+// // ENUMS
+// // ============================================================
+
+// enum Role {
+//   ADMIN
+//   MARKETING
+//   DIGITAL_MARKETING
+//   FIELD_SUPERVISOR
+//   MANAGER
+//   DIRECTOR
+// }
+
+// // ------------------------------------------------------------
+// // Unit / Inventory
+// // ------------------------------------------------------------
+
+// enum UnitStatus {
+//   AVAILABLE
+//   HOLD
+//   BOOKED
+//   AKAD
+//   SOLD
+//   CANCELLED
+// }
+
+// enum ConstructionStatus {
+//   NOT_STARTED
+//   FOUNDATION
+//   STRUCTURE
+//   WALL
+//   ROOF
+//   CEILING
+//   FINISHING
+//   COMPLETED
+// }
+
+// enum HouseFacing {
+//   NORTH
+//   SOUTH
+//   EAST
+//   WEST
+// }
+
+// // ------------------------------------------------------------
+// // Lead / CRM
+// // ------------------------------------------------------------
+
+// enum LeadSource {
+//   WALK_IN
+//   REFERRAL
+//   FACEBOOK
+//   INSTAGRAM
+//   TIKTOK
+//   WHATSAPP
+//   ADVERTISEMENT
+//   WEBSITE
+//   MARKETING
+//   OTHER
+// }
+
+// enum LeadStatus {
+//   NEW
+//   ACTIVE
+//   BOOKED
+//   CLOSED
+//   LOST
+// }
+
+// enum SalesStage {
+//   INQUIRY
+//   VISIT
+//   FOLLOW_UP
+//   DOCUMENTATION
+//   KPR
+//   SLIK
+//   OTS
+//   AKAD
+//   REALIZATION
+//   CANCELLED
+// }
+
+// // ------------------------------------------------------------
+// // Activity
+// // ------------------------------------------------------------
+
+// enum ActivityType {
+//   NOTE
+//   CALL
+//   WHATSAPP
+//   VISIT
+//   FOLLOW_UP
+//   DOCUMENT
+//   KPR
+//   SLIK
+//   OTS
+//   AKAD
+//   REALIZATION
+//   PAYMENT
+//   OTHER
+// }
+
+// // ------------------------------------------------------------
+// // Unit Reservation / HOLD
+// // ------------------------------------------------------------
+
+// enum ReservationType {
+//   HOLD
+//   BOOKING
+// }
+
+// enum ReservationStatus {
+//   ACTIVE
+//   RELEASED
+//   EXPIRED
+//   CONVERTED
+//   CANCELLED
+// }
+
+// // ------------------------------------------------------------
+// // Audit
+// // ------------------------------------------------------------
+
+// enum AuditAction {
+//   CREATE
+//   UPDATE
+//   DELETE
+//   STATUS_CHANGE
+// }
+
+// // ============================================================
+// // USER
+// // ============================================================
+
+// model User {
+//   id       String @id @default(cuid())
+
+//   name     String
+//   username String @unique
+//   email    String @unique
+//   phone    String?
+
+//   password String
+
+//   role     Role    @default(MARKETING)
+//   isActive Boolean @default(true)
+
+//   // Primary PIC untuk Lead
+//   leads Lead[] @relation("LeadMarketing")
+
+//   // User yang melakukan Activity
+//   activities Activity[]
+
+//   // Laporan harian
+//   dailyReports DailyReport[]
+
+//   // Audit log
+//   auditLogs AuditLog[]
+
+//   // Reservation / HOLD yang dibuat user
+//   reservations UnitReservation[]
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+
+//   @@index([role])
+//   @@index([isActive])
+// }
+
+// // ============================================================
+// // PROJECT
+// // ============================================================
+
+// model Project {
+//   id String @id @default(cuid())
+
+//   name String
+//   code String @unique
+
+//   address     String?
+//   description String?
+
+//   isActive Boolean @default(true)
+
+//   blocks Block[]
+
+//   leads Lead[]
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+// }
+
+// // ============================================================
+// // BLOCK
+// // ============================================================
+
+// model Block {
+//   id String @id @default(cuid())
+
+//   projectId String
+
+//   name String
+//   code String
+
+//   sortOrder Int @default(0)
+
+//   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+//   units Unit[]
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+
+//   @@unique([projectId, code])
+//   @@index([projectId])
+// }
+
+// // ============================================================
+// // PRODUCT CATEGORY
+// // ============================================================
+
+// model ProductCategory {
+//   id String @id @default(cuid())
+
+//   name String
+//   code String @unique
+
+//   description String?
+
+//   isActive Boolean @default(true)
+
+//   productTypes ProductType[]
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+
+//   @@index([isActive])
+// }
+
+// // ============================================================
+// // PRODUCT TYPE
+// // ============================================================
+
+// model ProductType {
+//   id String @id @default(cuid())
+
+//   categoryId String
+
+//   name String
+//   code String @unique
+
+//   // ----------------------------------------------------------
+//   // Spesifikasi standar produk
+//   // ----------------------------------------------------------
+
+//   landArea     Int?
+//   buildingArea Int?
+
+//   bedrooms  Int?
+//   bathrooms Int?
+
+//   ceilingHeight Decimal? @db.Decimal(5, 2)
+
+//   wallMaterial  String?
+//   roofMaterial  String?
+//   floorMaterial String?
+
+//   doorMaterial   String?
+//   windowMaterial String?
+
+//   electricity String?
+//   waterSource String?
+
+//   // Harga dasar/default produk
+//   basePrice Decimal? @db.Decimal(15, 2)
+
+//   description String?
+
+//   isActive Boolean @default(true)
+
+//   category ProductCategory @relation(fields: [categoryId], references: [id])
+
+//   units Unit[]
+
+//   leads Lead[]
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+
+//   @@index([categoryId])
+//   @@index([isActive])
+// }
+
+// // ============================================================
+// // UNIT / INVENTORY
+// // ============================================================
+
+// model Unit {
+//   id String @id @default(cuid())
+
+//   blockId String
+//   productTypeId String
+
+//   // Nomor unit dalam block
+//   number String
+
+//   // Contoh: NPK-G-01
+//   code String @unique
+
+//   // ----------------------------------------------------------
+//   // Data aktual unit
+//   // ----------------------------------------------------------
+
+//   landArea     Int?
+//   buildingArea Int?
+
+//   // Harga aktual unit
+//   price Decimal? @db.Decimal(15, 2)
+
+//   status UnitStatus @default(AVAILABLE)
+
+//   constructionStatus ConstructionStatus @default(NOT_STARTED)
+
+//   facing HouseFacing?
+
+//   description String?
+
+//   block Block @relation(fields: [blockId], references: [id], onDelete: Cascade)
+
+//   productType ProductType @relation(fields: [productTypeId], references: [id])
+
+//   leads Lead[]
+
+//   reservations UnitReservation[]
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+
+//   @@unique([blockId, number])
+
+//   @@index([blockId])
+//   @@index([productTypeId])
+//   @@index([status])
+//   @@index([constructionStatus])
+// }
+
+// // ============================================================
+// // UNIT RESERVATION / HOLD
+// // ============================================================
+
+// model UnitReservation {
+//   id String @id @default(cuid())
+
+//   unitId String
+//   leadId String
+//   createdById String
+
+//   type ReservationType @default(HOLD)
+
+//   status ReservationStatus @default(ACTIVE)
+
+//   startAt  DateTime @default(now())
+//   expiresAt DateTime?
+
+//   notes String?
+
+//   unit Unit @relation(fields: [unitId], references: [id])
+
+//   lead Lead @relation(fields: [leadId], references: [id])
+
+//   createdBy User @relation(fields: [createdById], references: [id])
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+
+//   @@index([unitId])
+//   @@index([leadId])
+//   @@index([createdById])
+//   @@index([status])
+//   @@index([expiresAt])
+// }
+
+// // ============================================================
+// // CUSTOMER
+// // ============================================================
+
+// model Customer {
+//   id String @id @default(cuid())
+
+//   name String
+
+//   phone String?
+//   email String?
+
+//   birthDate DateTime?
+
+//   // Data sensitif — akses perlu dibatasi lewat permission
+//   nik String?
+
+//   address String?
+
+//   notes String?
+
+//   leads Lead[]
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+
+//   @@index([name])
+//   @@index([phone])
+//   @@index([email])
+// }
+
+// // ============================================================
+// // LEAD
+// // ============================================================
+
+// model Lead {
+//   id String @id @default(cuid())
+
+//   // ----------------------------------------------------------
+//   // Customer
+//   // ----------------------------------------------------------
+
+//   customerId String
+
+//   // ----------------------------------------------------------
+//   // Primary PIC / Marketing
+//   // ----------------------------------------------------------
+
+//   marketingId String
+
+//   // ----------------------------------------------------------
+//   // Property interest
+//   // ----------------------------------------------------------
+
+//   projectId String
+
+//   productTypeId String
+
+//   // Unit boleh NULL karena customer bisa belum memilih unit
+//   unitId String?
+
+//   // ----------------------------------------------------------
+//   // Lead information
+//   // ----------------------------------------------------------
+
+//   source LeadSource
+
+//   status LeadStatus @default(NEW)
+
+//   stage SalesStage @default(INQUIRY)
+
+//   // ----------------------------------------------------------
+//   // Sales dates
+//   // ----------------------------------------------------------
+
+//   firstVisitAt DateTime?
+
+//   nextFollowUpAt DateTime?
+
+//   // Catatan umum tentang Lead
+//   notes String?
+
+//   // ----------------------------------------------------------
+//   // Relations
+//   // ----------------------------------------------------------
+
+//   customer Customer @relation(fields: [customerId], references: [id])
+
+//   marketing User @relation("LeadMarketing", fields: [marketingId], references: [id])
+
+//   project Project @relation(fields: [projectId], references: [id])
+
+//   productType ProductType @relation(fields: [productTypeId], references: [id])
+
+//   unit Unit? @relation(fields: [unitId], references: [id], onDelete: SetNull)
+
+//   activities Activity[]
+
+//   reservations UnitReservation[]
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+
+//   @@index([customerId])
+//   @@index([marketingId])
+//   @@index([projectId])
+//   @@index([productTypeId])
+//   @@index([unitId])
+//   @@index([source])
+//   @@index([status])
+//   @@index([stage])
+//   @@index([nextFollowUpAt])
+// }
+
+// // ============================================================
+// // ACTIVITY
+// // ============================================================
+
+// model Activity {
+//   id String @id @default(cuid())
+
+//   leadId String
+
+//   // User yang benar-benar melakukan aktivitas
+//   createdById String
+
+//   type ActivityType
+
+//   activityDate DateTime
+
+//   description String
+
+//   lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+//   createdBy User @relation(fields: [createdById], references: [id])
+
+//   createdAt DateTime @default(now())
+
+//   @@index([leadId])
+//   @@index([createdById])
+//   @@index([activityDate])
+//   @@index([type])
+// }
+
+// // ============================================================
+// // DAILY REPORT
+// // ============================================================
+
+// model DailyReport {
+//   id String @id @default(cuid())
+
+//   userId String
+
+//   reportDate DateTime @db.Date
+
+//   notes String?
+
+//   submittedAt DateTime?
+
+//   user User @relation(fields: [userId], references: [id])
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+
+//   @@unique([userId, reportDate])
+//   @@index([reportDate])
+// }
+
+// // ============================================================
+// // AUDIT LOG
+// // ============================================================
+
+// model AuditLog {
+//   id String @id @default(cuid())
+
+//   userId String
+
+//   entity   String
+//   entityId String
+
+//   action AuditAction
+
+//   oldData Json?
+//   newData Json?
+
+//   user User @relation(fields: [userId], references: [id])
+
+//   createdAt DateTime @default(now())
+
+//   @@index([entity, entityId])
+//   @@index([userId])
+//   @@index([createdAt])
+// }
