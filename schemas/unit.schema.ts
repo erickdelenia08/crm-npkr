@@ -15,7 +15,7 @@ export const unitSchema = z.object({
   description: z.string().optional().nullable(),
 });
 
-export type UnitInput = z.infer<typeof unitSchema>;
+export type UnitInput = z.input<typeof unitSchema>;
 
 export const bulkUnitSchema = z.object({
   blockId: z.string().min(1, "Block is required"),
@@ -29,4 +29,4 @@ export const bulkUnitSchema = z.object({
   constructionStatus: z.enum(["NOT_STARTED", "FOUNDATION", "STRUCTURE", "WALL", "ROOF", "CEILING", "FINISHING", "COMPLETED"]).default("NOT_STARTED"),
 });
 
-export type BulkUnitInput = z.infer<typeof bulkUnitSchema>;
+export type BulkUnitInput = z.input<typeof bulkUnitSchema>;

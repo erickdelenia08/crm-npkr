@@ -38,18 +38,7 @@ type ActivityType =
     | "PAYMENT"
     | "OTHER"
 
-type Activity = {
-    id: string
-    leadId: string
-    customerName: string
-    phone: string
-    unitCode: string | null
-    type: ActivityType
-    description: string
-    createdAt: string
-    userName: string
-}
-
+type Activity = NonNullable<Awaited<ReturnType<typeof import("@/actions/activity.action").getActivities>>>[number]
 const activityTypeConfig: Record<
     string,
     {
@@ -139,7 +128,7 @@ const activityTypeConfig: Record<
     },
 }
 
-function formatDateTime(value: string) {
+function formatDateTime(value: Date | string) {
     const date = new Date(value)
     return new Intl.DateTimeFormat("id-ID", {
         day: "2-digit",

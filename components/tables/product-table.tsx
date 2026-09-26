@@ -14,6 +14,7 @@ import {
 import { ProductCategoryForm } from "@/components/forms/product-category-form"
 import { ProductTypeForm } from "@/components/forms/product-type-form"
 import { deleteCategory, deleteProductType } from "@/actions/product.action"
+import { ProductCategoryInput, ProductTypeInput } from "@/schemas/product.schema"
 
 // Define matched types instead of generic unknown
 type CategoryData = {
@@ -58,11 +59,11 @@ export function ProductTable({ categories, types }: ProductTableProps) {
 
     // Category Modal State
     const [isCatModalOpen, setIsCatModalOpen] = useState(false)
-    const [catInitialData, setCatInitialData] = useState<any>(null)
+    const [catInitialData, setCatInitialData] = useState<ProductCategoryInput | null>(null)
 
     // Type Modal State
     const [isTypeModalOpen, setIsTypeModalOpen] = useState(false)
-    const [typeInitialData, setTypeInitialData] = useState<any>(null)
+    const [typeInitialData, setTypeInitialData] = useState<ProductTypeInput | null>(null)
 
     // Handlers
     const handleEditCategory = (cat: CategoryData) => {

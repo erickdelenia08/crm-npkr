@@ -18,22 +18,7 @@ import { id } from "date-fns/locale"
 
 type LeadStatus = "NEW" | "FOLLOW_UP" | "PROSPECT" | "BOOKED" | "CLOSED" | "LOST"
 
-type CustomerData = {
-    id: string
-    name: string
-    phone: string | null
-    email: string | null
-    address: string | null
-    leads: {
-        id: string
-        source: string
-        status: string
-        marketing: { name: string }
-        productType: { name: string }
-        createdAt: Date
-    }[]
-    createdAt: Date
-}
+type CustomerData = Awaited<ReturnType<typeof import("@/actions/customer.action").getCustomers>>[number]
 
 interface CustomerTableProps {
     initialCustomers: CustomerData[]

@@ -18,18 +18,7 @@ import {
 type LeadStatus = "NEW" | "FOLLOW_UP" | "PROSPECT" | "BOOKED" | "CLOSED" | "LOST"
 type LeadStage = "INQUIRY" | "VISIT" | "FOLLOW_UP" | "DOCUMENTATION" | "KPR" | "SLIK" | "OTS" | "AKAD" | "REALIZATION" | "CANCELLED"
 
-type SafeLead = {
-    id: string
-    customerName: string
-    customerPhone: string
-    unitCode: string | null
-    source: string
-    status: LeadStatus
-    stage: LeadStage
-    marketing: string
-    nextFollowUp: Date | null
-}
-
+type SafeLead = NonNullable<Awaited<ReturnType<typeof import("@/actions/lead.action").getLeads>>>[number]
 const statusLabels: Record<string, string> = {
     NEW: "New",
     FOLLOW_UP: "Follow Up",
@@ -64,9 +53,9 @@ export function LeadsTable({ initialLeads }: LeadsTableProps) {
         return initialLeads.filter((lead) => {
             const matchesSearch =
                 !search ||
-                lead.customerName.toLowerCase().includes(search) ||
-                lead.customerPhone.toLowerCase().includes(search) ||
-                (lead.unitCode && lead.unitCode.toLowerCase().includes(search))
+                lead.customer.name.toLowerCase().includes(search) ||
+                lead.customer.phone?.toLowerCase().includes(search) ||
+                (lead.unit && lead.unit.code && lead.unit.code.toLowerCase().includes(search))
 
             const matchesStatus =
                 statusFilter === "ALL" || lead.status === statusFilter
@@ -140,11 +129,11 @@ export function LeadsTable({ initialLeads }: LeadsTableProps) {
                                             <div className="flex items-center gap-3">
                                                 <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
                                                     <span className="text-sm font-bold text-blue-700">
-                                                        {lead.customerName.charAt(0).toUpperCase()}
+                                                        {lead.customer.name.charAt(0).toUpperCase()}
                                                     </span>
                                                 </div>
                                                 <div>
-                                                    <p className="font-bold text-slate-900">{lead.customerName}</p>
+                                                    <p className="font-bold text-slate-900">{lead.customer.name}</p>
                                                     <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
                                                         <MapPin className="w-3 h-3" />
                                                         {lead.source}
@@ -155,14 +144,14 @@ export function LeadsTable({ initialLeads }: LeadsTableProps) {
                                         <td className="px-4 py-4">
                                             <p className="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
                                                 <Phone className="w-3.5 h-3.5 text-slate-400" />
-                                                {lead.customerPhone}
+                                                {lead.customer.phone || "-"}
                                             </p>
                                         </td>
                                         <td className="px-4 py-4">
-                                            {lead.unitCode ? (
+                                            {lead.unit?.code ? (
                                                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-100">
                                                     <Home className="w-3.5 h-3.5" />
-                                                    {lead.unitCode}
+                                                    {lead.unit.code}
                                                 </span>
                                             ) : (
                                                 <span className="text-xs text-slate-400 italic">Belum pilih unit</span>
@@ -177,11 +166,11 @@ export function LeadsTable({ initialLeads }: LeadsTableProps) {
                                             <div className="flex items-center gap-2">
                                                 <UserCircle2 className="w-4 h-4 text-slate-400" />
                                                 <div>
-                                                    <p className="text-xs font-semibold text-slate-700">{lead.marketing}</p>
-                                                    {lead.nextFollowUp && (
+                                                    <p className="text-xs font-semibold text-slate-700">{lead.marketing.name}</p>
+                                                    {lead.nextFollowUpAt && (
                                                         <p className="text-[10px] text-amber-600 flex items-center gap-1 mt-0.5 font-medium">
                                                             <Calendar className="w-3 h-3" />
-                                                            {new Date(lead.nextFollowUp).toLocaleDateString('id-ID')}
+                                                            {new Date(lead.nextFollowUpAt).toLocaleDateString('id-ID')}
                                                         </p>
                                                     )}
                                                 </div>

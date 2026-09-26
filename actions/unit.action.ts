@@ -27,6 +27,28 @@ export async function getUnits() {
         return [];
     }
 }
+export async function getUnitById(id: string) {
+    try {
+        return await prisma.unit.findUnique({
+            where: { id },
+            include: {
+                block: {
+                    include: {
+                        project: true
+                    }
+                },
+                productType: {
+                    include: {
+                        category: true
+                    }
+                }
+            }
+        });
+    } catch (error: unknown) {
+        console.error("Error fetching unit:", error);
+        return null;
+    }
+}
 
 export async function getProjectsWithBlocks() {
     try {
