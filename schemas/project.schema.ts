@@ -6,10 +6,10 @@ export const projectSchema = z.object({
   code: z.string().min(1, "Code is required"),
   address: z.string().optional(),
   description: z.string().optional(),
-  isActive: z.boolean().default(true),
+  isActive: z.boolean(),
 });
 
-export type ProjectInput = z.infer<typeof projectSchema>;
+export type ProjectInput = z.input<typeof projectSchema>;
 
 export const blockSchema = z.object({
   id: z.string().optional(),

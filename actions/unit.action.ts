@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { UnitStatus } from "@/generated/prisma";
 import { unitSchema, bulkUnitSchema } from "@/schemas/unit.schema";
 import { revalidatePath } from "next/cache";
 
@@ -160,7 +161,7 @@ export async function updateUnitStatus(id: string, status: string) {
     try {
         await prisma.unit.update({
             where: { id },
-            data: { status: status as any } // Safe cast, schema validated by TS earlier
+            data: { status: status as UnitStatus } // Safe cast, schema validated by TS earlier
         });
         revalidatePath("/units");
         return { success: true };

@@ -5,10 +5,10 @@ export const productCategorySchema = z.object({
   name: z.string().min(1, "Name is required"),
   code: z.string().min(1, "Code is required"),
   description: z.string().optional(),
-  isActive: z.boolean().default(true),
+  isActive: z.boolean(),
 });
 
-export type ProductCategoryInput = z.infer<typeof productCategorySchema>;
+export type ProductCategoryInput = z.input<typeof productCategorySchema>;
 
 export const productTypeSchema = z.object({
   id: z.string().optional(),
@@ -24,7 +24,7 @@ export const productTypeSchema = z.object({
   wallMaterial: z.string().optional().nullable(),
   roofMaterial: z.string().optional().nullable(),
   description: z.string().optional().nullable(),
-  isActive: z.boolean().default(true),
+  isActive: z.boolean(),
 });
 
-export type ProductTypeInput = z.infer<typeof productTypeSchema>;
+export type ProductTypeInput = z.input<typeof productTypeSchema>;

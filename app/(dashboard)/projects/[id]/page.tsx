@@ -20,36 +20,5 @@ export default async function ProjectDetailPage({ params }: PageProps) {
 
     const units = await getProjectUnits(projectId);
 
-    // Map strict DB model to client props to avoid passing unneeded sensitive DB properties if any
-    const safeProject = {
-        id: project.id,
-        name: project.name,
-        code: project.code,
-        address: project.address,
-        description: project.description,
-        blocks: project.blocks.map(b => ({
-            id: b.id,
-            name: b.name,
-            code: b.code,
-            units: b.units,
-        }))
-    };
-
-    const safeUnits = units.map(u => ({
-        id: u.id,
-        code: u.code,
-        price: u.price,
-        status: u.status,
-        block: {
-            name: u.block.name
-        },
-        productType: {
-            name: u.productType.name,
-            category: {
-                name: u.productType.category.name
-            }
-        }
-    }));
-
-    return <ProjectDetailClient project={safeProject} units={safeUnits} />
+    return <ProjectDetailClient project={project} units={units} />
 }

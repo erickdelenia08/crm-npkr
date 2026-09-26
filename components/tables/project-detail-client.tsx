@@ -15,28 +15,10 @@ import {
 } from "lucide-react"
 import { saveBlock } from "@/actions/project.action"
 
-type ProjectData = {
-    id: string
-    name: string
-    code: string
-    address: string | null
-    description: string | null
-    blocks: {
-        id: string
-        name: string
-        code: string
-        units: any[]
-    }[]
-}
+import { getProjectById, getProjectUnits } from "@/actions/project.action"
 
-type UnitData = {
-    id: string
-    code: string
-    price: any
-    status: string
-    block: { name: string }
-    productType: { name: string, category: { name: string } }
-}
+type ProjectData = NonNullable<Awaited<ReturnType<typeof getProjectById>>>
+type UnitData = Awaited<ReturnType<typeof getProjectUnits>>[number]
 
 interface ProjectDetailClientProps {
     project: ProjectData

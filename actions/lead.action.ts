@@ -14,18 +14,29 @@ export async function getLeads() {
                 project: true,
                 productType: true,
             },
-            orderBy: { createdAt: 'desc' }
-        });
-        return leads;
+            orderBy: {
+                createdAt: "desc",
+            },
+        })
+
+        return leads.map((lead) => ({
+            ...lead,
+            unit: lead.unit
+                ? {
+                    ...lead.unit,
+                    price: lead.unit.price?.toString() ?? null,
+                }
+                : null,
+        }))
     } catch (error: unknown) {
-        console.error("Error fetching leads:", error);
-        return [];
+        console.error("Error fetching leads:", error)
+        return []
     }
 }
 
 export async function getLeadById(id: string) {
     try {
-        return await prisma.lead.findUnique({
+        const lead = await prisma.lead.findUnique({
             where: { id },
             include: {
                 customer: true,
@@ -33,25 +44,40 @@ export async function getLeadById(id: string) {
                 project: true,
                 productType: {
                     include: {
-                        category: true
-                    }
+                        category: true,
+                    },
                 },
                 unit: true,
                 activities: {
-                    orderBy: { createdAt: 'desc' }
+                    orderBy: {
+                        createdAt: "desc",
+                    },
+                },
+            },
+        })
+
+        if (!lead) {
+            return null
+        }
+
+        return {
+            ...lead,
+            unit: lead.unit
+                ? {
+                    ...lead.unit,
+                    price: lead.unit.price?.toString() ?? null,
                 }
-            }
-        });
+                : null,
+        }
     } catch (error: unknown) {
-        console.error("Error fetching lead by id:", error);
-        return null;
+        console.error("Error fetching lead by id:", error)
+        return null
     }
 }
-
 export async function saveLead(data: unknown) {
     try {
         const parsed = leadSchema.parse(data);
-        
+
         let nextFollowUpDate = null;
         if (parsed.nextFollowUpAt) {
             nextFollowUpDate = new Date(parsed.nextFollowUpAt);
@@ -87,7 +113,7 @@ export async function saveLead(data: unknown) {
                 }
             });
         }
-        
+
         revalidatePath("/leads");
         revalidatePath(`/customers/${parsed.customerId}`);
         return { success: true };
@@ -100,16 +126,93 @@ export async function saveLead(data: unknown) {
 export async function getLeadFormDependencies() {
     try {
         const [customers, projects, productTypes, units, users] = await Promise.all([
-            prisma.customer.findMany({ select: { id: true, name: true, phone: true }, orderBy: { name: 'asc' } }),
-            prisma.project.findMany({ select: { id: true, name: true }, orderBy: { name: 'asc' } }),
-            prisma.productType.findMany({ select: { id: true, name: true, categoryId: true, category: { select: { name: true } } }, orderBy: { name: 'asc' } }),
-            prisma.unit.findMany({ select: { id: true, code: true, price: true, block: { select: { projectId: true } }, productTypeId: true, status: true }, where: { status: 'AVAILABLE' }, orderBy: { code: 'asc' } }),
-            prisma.user.findMany({ select: { id: true, name: true }, where: { isActive: true }, orderBy: { name: 'asc' } })
+            prisma.customer.findMany({
+                select: {
+                    id: true,
+                    name: true,
+                    phone: true,
+                },
+                orderBy: { name: "asc" },
+            }),
+
+            prisma.project.findMany({
+                select: {
+                    id: true,
+                    name: true,
+                },
+                orderBy: { name: "asc" },
+            }),
+
+            prisma.productType.findMany({
+                select: {
+                    id: true,
+                    name: true,
+                    categoryId: true,
+                    category: {
+                        select: {
+                            name: true,
+                        },
+                    },
+                },
+                orderBy: { name: "asc" },
+            }),
+
+            prisma.unit.findMany({
+                select: {
+                    id: true,
+                    code: true,
+                    price: true,
+                    block: {
+                        select: {
+                            projectId: true,
+                        },
+                    },
+                    productTypeId: true,
+                    status: true,
+                },
+                where: {
+                    status: "AVAILABLE",
+                },
+                orderBy: {
+                    code: "asc",
+                },
+            }),
+
+            prisma.user.findMany({
+                select: {
+                    id: true,
+                    name: true,
+                },
+                where: {
+                    isActive: true,
+                },
+                orderBy: {
+                    name: "asc",
+                },
+            }),
         ]);
 
-        return { customers, projects, productTypes, units, users };
+        const serializedUnits = units.map((unit) => ({
+            ...unit,
+            price: unit.price?.toString() ?? null,
+        }));
+
+        return {
+            customers,
+            projects,
+            productTypes,
+            units: serializedUnits,
+            users,
+        };
     } catch (error: unknown) {
         console.error("Error fetching lead dependencies:", error);
-        return { customers: [], projects: [], productTypes: [], units: [], users: [] };
+
+        return {
+            customers: [],
+            projects: [],
+            productTypes: [],
+            units: [],
+            users: [],
+        };
     }
 }

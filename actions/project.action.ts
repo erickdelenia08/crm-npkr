@@ -30,7 +30,7 @@ export async function getProjects(searchQuery: string = "") {
                 ...block,
                 units: block.units.map((unit) => ({
                     ...unit,
-                    price: unit.price.toString(),
+                    price: unit.price?.toString() || null,
                 })),
             })),
         }));

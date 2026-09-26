@@ -15,15 +15,12 @@ import {
     FileText,
     Building,
 } from "lucide-react"
-
-type LeadStatus = "NEW" | "FOLLOW_UP" | "PROSPECT" | "BOOKED" | "CLOSED" | "LOST"
-
-type LeadStage = "INQUIRY" | "VISIT" | "FOLLOW_UP" | "DOCUMENTATION" | "KPR" | "SLIK" | "OTS" | "AKAD" | "REALIZATION" | "CANCELLED"
-
-type ActivityType = "NOTE" | "CALL" | "WHATSAPP" | "VISIT" | "FOLLOW_UP" | "DOCUMENT" | "KPR" | "SLIK" | "OTS" | "AKAD" | "REALIZATION" | "PAYMENT" | "OTHER"
+import { saveActivity } from "@/actions/activity.action"
+import { getLeadById } from "@/actions/lead.action"
+import { LeadStatus, SalesStage, ActivityType } from "@/generated/prisma"
 
 type LeadDetailViewProps = {
-    initialLead: any
+    initialLead: NonNullable<Awaited<ReturnType<typeof getLeadById>>>
 }
 
 const statusLabels: Record<string, string> = {
@@ -92,7 +89,7 @@ const ActivityIcon = ({ type }: { type: string }) => {
     }
 }
 
-const formatDate = (dateValue: any) => {
+const formatDate = (dateValue: Date | string | null | undefined) => {
     if (!dateValue) return "—"
     try {
         return new Intl.DateTimeFormat("id-ID", {
@@ -107,7 +104,7 @@ const formatDate = (dateValue: any) => {
 
 export function LeadDetailView({ initialLead }: LeadDetailViewProps) {
     const [leadStatus, setLeadStatus] = useState<LeadStatus>(initialLead.status)
-    const [salesStage, setSalesStage] = useState<LeadStage>(initialLead.stage)
+    const [salesStage, setSalesStage] = useState<SalesStage>(initialLead.stage)
     const [nextFollowUp, setNextFollowUp] = useState(initialLead.nextFollowUpAt ? new Date(initialLead.nextFollowUpAt).toISOString().split('T')[0] : "")
 
     const [activityType, setActivityType] = useState<ActivityType>("FOLLOW_UP")
@@ -118,12 +115,14 @@ export function LeadDetailView({ initialLead }: LeadDetailViewProps) {
     const [changeFollowUp, setChangeFollowUp] = useState(false)
 
     const [activityNewStatus, setActivityNewStatus] = useState<LeadStatus>(leadStatus)
-    const [activityNewStage, setActivityNewStage] = useState<LeadStage>(salesStage)
+    const [activityNewStage, setActivityNewStage] = useState<SalesStage>(salesStage)
     const [activityNewFollowUp, setActivityNewFollowUp] = useState(nextFollowUp)
 
-    const [activities, setActivities] = useState<any[]>(initialLead.activities || [])
+    const [activities, setActivities] = useState(initialLead.activities || [])
 
-    const handleAddActivity = (e: React.FormEvent) => {
+    const [isSaving, setIsSaving] = useState(false)
+
+    const handleAddActivity = async (e: React.FormEvent) => {
         e.preventDefault()
 
         if (!newLogNote.trim()) {
@@ -131,26 +130,42 @@ export function LeadDetailView({ initialLead }: LeadDetailViewProps) {
             return
         }
 
-        const newActivity = {
-            id: Date.now().toString(),
+        setIsSaving(true)
+
+        const res = await saveActivity({
+            leadId: initialLead.id,
+            createdById: initialLead.marketingId, // use the current marketing user
             type: activityType,
-            date: new Date().toISOString(),
-            notes: newLogNote.trim(),
-            // Mock server update
+            description: newLogNote.trim(),
+            updateLead: {
+                ...(changeStatus && { status: activityNewStatus }),
+                ...(changeStage && { stage: activityNewStage }),
+                ...(changeFollowUp && { nextFollowUpAt: activityNewFollowUp || null }),
+            }
+        })
+
+        if (res.success) {
+            if (!res.activity) {
+                alert("Aktivitas berhasil dibuat, tetapi data aktivitas tidak ditemukan.");
+                return;
+            }
+            setActivities((prev) => [res.activity, ...prev])
+
+            if (changeStatus) setLeadStatus(activityNewStatus)
+            if (changeStage) setSalesStage(activityNewStage)
+            if (changeFollowUp) setNextFollowUp(activityNewFollowUp)
+
+            setNewLogNote("")
+            setChangeStatus(false)
+            setChangeStage(false)
+            setChangeFollowUp(false)
+
+            alert("Aktivitas berhasil ditambahkan!")
+        } else {
+            alert("Gagal menambahkan aktivitas: " + res.error)
         }
 
-        setActivities((prev) => [newActivity, ...prev])
-
-        if (changeStatus) setLeadStatus(activityNewStatus)
-        if (changeStage) setSalesStage(activityNewStage)
-        if (changeFollowUp) setNextFollowUp(activityNewFollowUp)
-
-        setNewLogNote("")
-        setChangeStatus(false)
-        setChangeStage(false)
-        setChangeFollowUp(false)
-
-        alert("Aktivitas berhasil ditambahkan! (Simulasi)")
+        setIsSaving(false)
     }
 
     return (
@@ -277,7 +292,7 @@ export function LeadDetailView({ initialLead }: LeadDetailViewProps) {
                                 <input type="checkbox" id="changeStage" checked={changeStage} onChange={(e) => setChangeStage(e.target.checked)} className="rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
                                 <label htmlFor="changeStage" className="text-xs text-slate-700">Update Tahap Sales</label>
                                 {changeStage && (
-                                    <select value={activityNewStage} onChange={(e) => setActivityNewStage(e.target.value as LeadStage)} className="ml-2 px-2 py-1 bg-white border border-slate-200 rounded text-xs outline-none">
+                                    <select value={activityNewStage} onChange={(e) => setActivityNewStage(e.target.value as SalesStage)} className="ml-2 px-2 py-1 bg-white border border-slate-200 rounded text-xs outline-none">
                                         {Object.entries(stageLabels).map(([val, label]) => <option key={val} value={val}>{label}</option>)}
                                     </select>
                                 )}
@@ -292,9 +307,9 @@ export function LeadDetailView({ initialLead }: LeadDetailViewProps) {
                         </div>
 
                         <div className="flex justify-end pt-2">
-                            <button type="submit" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-md flex items-center gap-2 transition-all">
+                            <button type="submit" disabled={isSaving} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-md flex items-center gap-2 transition-all disabled:opacity-50">
                                 <Send className="w-3.5 h-3.5" />
-                                Simpan Aktivitas
+                                {isSaving ? "Menyimpan..." : "Simpan Aktivitas"}
                             </button>
                         </div>
                     </form>
@@ -313,9 +328,9 @@ export function LeadDetailView({ initialLead }: LeadDetailViewProps) {
                                     <div className="w-[calc(100%-3rem)] md:w-[calc(50%-2.5rem)] bg-slate-50 p-4 rounded-xl border border-slate-100 shadow-sm">
                                         <div className="flex items-center justify-between mb-2">
                                             <span className="text-[10px] font-bold text-blue-600 bg-blue-100/50 px-2 py-0.5 rounded-md">{activity.type}</span>
-                                            <span className="text-[10px] text-slate-400 font-medium">{formatDate(activity.createdAt || activity.date)}</span>
+                                            <span className="text-[10px] text-slate-400 font-medium">{formatDate(activity.createdAt)}</span>
                                         </div>
-                                        <p className="text-xs text-slate-700 leading-relaxed">{activity.notes}</p>
+                                        <p className="text-xs text-slate-700 leading-relaxed">{activity.description}</p>
                                     </div>
                                 </div>
                             ))}

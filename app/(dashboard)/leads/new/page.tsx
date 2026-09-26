@@ -5,6 +5,8 @@ export const dynamic = "force-dynamic"
 
 export default async function NewLeadPage() {
     const dependencies = await getLeadFormDependencies()
-    
+
+    console.log(dependencies)
+
     return <LeadForm dependencies={dependencies} />
 }

@@ -17,6 +17,8 @@
     "bcryptjs": "^3.0.3",
     "date-fns": "^4.4.0",
     "dotenv": "^18.0.3",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
     "lucide-react": "^1.48.0",
     "mariadb": "^3.5.4",
     "next": "16.3.6",
@@ -24,6 +26,7 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "react-hook-form": "^7.88.0",
+    "xlsx": "^0.18.5",
     "zod": "^4.6.5"
   },
   "devDependencies": {

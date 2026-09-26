@@ -1,14 +1,24 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useState, useMemo } from "react"
 import Link from "next/link"
-import { Plus, Search, Calendar, Eye, RotateCcw } from "lucide-react"
+import {
+    Search,
+    Plus,
+    Filter,
+    MoreHorizontal,
+    UserCircle2,
+    Calendar,
+    Phone,
+    Home,
+    MapPin,
+    ArrowRight,
+} from "lucide-react"
 
 type LeadStatus = "NEW" | "FOLLOW_UP" | "PROSPECT" | "BOOKED" | "CLOSED" | "LOST"
-
 type LeadStage = "INQUIRY" | "VISIT" | "FOLLOW_UP" | "DOCUMENTATION" | "KPR" | "SLIK" | "OTS" | "AKAD" | "REALIZATION" | "CANCELLED"
 
-type LeadData = {
+type SafeLead = {
     id: string
     customerName: string
     customerPhone: string
@@ -20,260 +30,182 @@ type LeadData = {
     nextFollowUp: Date | null
 }
 
-interface LeadsTableProps {
-    initialLeads: LeadData[]
-}
-
 const statusLabels: Record<string, string> = {
     NEW: "New",
     FOLLOW_UP: "Follow Up",
     PROSPECT: "Prospect",
     BOOKED: "Booked",
-    CLOSED: "Closed",
+    CLOSED: "Closed (Won)",
     LOST: "Lost",
-}
-
-const stageLabels: Record<string, string> = {
-    INQUIRY: "Inquiry",
-    VISIT: "Survey Lokasi",
-    FOLLOW_UP: "Follow Up",
-    DOCUMENTATION: "Dokumen",
-    KPR: "Proses KPR",
-    SLIK: "SLIK",
-    OTS: "OTS",
-    AKAD: "Akad",
-    REALIZATION: "Realisasi",
-    CANCELLED: "Batal",
 }
 
 const getStatusBadge = (status: string) => {
     const styles: Record<string, string> = {
         NEW: "bg-blue-50 text-blue-700 border-blue-200",
         FOLLOW_UP: "bg-amber-50 text-amber-700 border-amber-200",
-        PROSPECT: "bg-emerald-50 text-emerald-700 border-emerald-200",
+        PROSPECT: "bg-purple-50 text-purple-700 border-purple-200",
         BOOKED: "bg-violet-50 text-violet-700 border-violet-200",
-        CLOSED: "bg-slate-100 text-slate-700 border-slate-200",
-        LOST: "bg-red-50 text-red-700 border-red-200",
+        CLOSED: "bg-emerald-50 text-emerald-700 border-emerald-200",
+        LOST: "bg-rose-50 text-rose-700 border-rose-200",
     }
-    return styles[status] || "bg-slate-50 text-slate-700 border-slate-200"
+    return styles[status] || "bg-slate-100 text-slate-700 border-slate-200"
 }
 
-const getStageBadge = (stage: string) => {
-    const styles: Record<string, string> = {
-        INQUIRY: "bg-slate-50 text-slate-600 border-slate-200",
-        VISIT: "bg-blue-50 text-blue-700 border-blue-200",
-        FOLLOW_UP: "bg-amber-50 text-amber-700 border-amber-200",
-        DOCUMENTATION: "bg-indigo-50 text-indigo-700 border-indigo-200",
-        KPR: "bg-cyan-50 text-cyan-700 border-cyan-200",
-        SLIK: "bg-orange-50 text-orange-700 border-orange-200",
-        OTS: "bg-purple-50 text-purple-700 border-purple-200",
-        AKAD: "bg-emerald-50 text-emerald-700 border-emerald-200",
-        REALIZATION: "bg-green-50 text-green-700 border-green-200",
-        CANCELLED: "bg-red-50 text-red-700 border-red-200",
-    }
-    return styles[stage] || "bg-slate-50 text-slate-600 border-slate-200"
-}
-
-const formatDate = (date: Date | null) => {
-    if (!date) return "—"
-    return new Intl.DateTimeFormat("id-ID", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-    }).format(new Date(date))
+interface LeadsTableProps {
+    initialLeads: SafeLead[]
 }
 
 export function LeadsTable({ initialLeads }: LeadsTableProps) {
     const [searchTerm, setSearchTerm] = useState("")
-    const [selectedStatus, setSelectedStatus] = useState<LeadStatus | "">("")
-    const [selectedStage, setSelectedStage] = useState<LeadStage | "">("")
-    const [selectedMarketing, setSelectedMarketing] = useState("")
-
-    const marketingOptions = useMemo(() => {
-        return Array.from(new Set(initialLeads.map((lead) => lead.marketing))).sort()
-    }, [initialLeads])
+    const [statusFilter, setStatusFilter] = useState("ALL")
 
     const filteredLeads = useMemo(() => {
-        const keyword = searchTerm.trim().toLowerCase()
+        const search = searchTerm.trim().toLowerCase()
         return initialLeads.filter((lead) => {
             const matchesSearch =
-                !keyword ||
-                lead.id.toLowerCase().includes(keyword) ||
-                lead.customerName.toLowerCase().includes(keyword) ||
-                lead.customerPhone.toLowerCase().includes(keyword) ||
-                (lead.unitCode?.toLowerCase().includes(keyword) ?? false)
+                !search ||
+                lead.customerName.toLowerCase().includes(search) ||
+                lead.customerPhone.toLowerCase().includes(search) ||
+                (lead.unitCode && lead.unitCode.toLowerCase().includes(search))
 
-            const matchesStatus = selectedStatus === "" || lead.status === selectedStatus
-            const matchesStage = selectedStage === "" || lead.stage === selectedStage
-            const matchesMarketing = selectedMarketing === "" || lead.marketing === selectedMarketing
+            const matchesStatus =
+                statusFilter === "ALL" || lead.status === statusFilter
 
-            return matchesSearch && matchesStatus && matchesStage && matchesMarketing
+            return matchesSearch && matchesStatus
         })
-    }, [initialLeads, searchTerm, selectedStatus, selectedStage, selectedMarketing])
-
-    const resetFilters = () => {
-        setSearchTerm("")
-        setSelectedStatus("")
-        setSelectedStage("")
-        setSelectedMarketing("")
-    }
-
-    const hasActiveFilter = searchTerm !== "" || selectedStatus !== "" || selectedStage !== "" || selectedMarketing !== ""
+    }, [searchTerm, statusFilter, initialLeads])
 
     return (
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Pipeline Lead CRM</h1>
-                    <p className="text-sm text-slate-500 mt-0.5">Kelola prospek pembeli, jadwal follow up, dan tahap transaksi.</p>
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-900">Leads & Prospek</h1>
+                    <p className="mt-1 text-sm text-slate-500">
+                        Kelola data calon pembeli dan progress penjualan.
+                    </p>
                 </div>
                 <Link
                     href="/leads/new"
-                    className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-md shadow-blue-600/20 flex items-center justify-center gap-2 transition-all w-full sm:w-auto"
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-all"
                 >
                     <Plus className="w-4 h-4" />
-                    <span>Input Lead Baru</span>
+                    Tambah Lead
                 </Link>
             </div>
 
-            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
-                <div className="flex flex-col lg:flex-row gap-3">
-                    <div className="relative w-full lg:flex-1">
-                        <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <input
-                            type="text"
-                            placeholder="Cari nama customer, No. HP, unit, atau ID lead..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all"
-                        />
-                    </div>
-
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row gap-4">
+                <div className="relative flex-1">
+                    <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                        type="text"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        placeholder="Cari nama, telepon, atau unit..."
+                        className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all"
+                    />
+                </div>
+                <div className="flex items-center gap-2">
+                    <Filter className="w-4 h-4 text-slate-400" />
                     <select
-                        value={selectedStatus}
-                        onChange={(e) => setSelectedStatus(e.target.value as LeadStatus | "")}
-                        className="w-full lg:w-44 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-blue-600"
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all"
                     >
-                        <option value="">Semua Status</option>
+                        <option value="ALL">Semua Status</option>
                         {Object.entries(statusLabels).map(([key, label]) => (
                             <option key={key} value={key}>{label}</option>
                         ))}
                     </select>
-
-                    <select
-                        value={selectedStage}
-                        onChange={(e) => setSelectedStage(e.target.value as LeadStage | "")}
-                        className="w-full lg:w-48 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-blue-600"
-                    >
-                        <option value="">Semua Tahap</option>
-                        {Object.entries(stageLabels).map(([key, label]) => (
-                            <option key={key} value={key}>{label}</option>
-                        ))}
-                    </select>
-
-                    <select
-                        value={selectedMarketing}
-                        onChange={(e) => setSelectedMarketing(e.target.value)}
-                        className="w-full lg:w-48 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-blue-600"
-                    >
-                        <option value="">Semua Marketing</option>
-                        {marketingOptions.map((marketing) => (
-                            <option key={marketing} value={marketing}>{marketing}</option>
-                        ))}
-                    </select>
-                </div>
-
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-1">
-                    <span className="text-[11px] text-slate-400">
-                        Menampilkan <span className="font-semibold text-slate-600">{filteredLeads.length}</span> dari <span className="font-semibold text-slate-600">{initialLeads.length}</span> lead
-                    </span>
-                    {hasActiveFilter && (
-                        <button
-                            type="button"
-                            onClick={resetFilters}
-                            className="inline-flex items-center justify-center gap-1.5 text-[11px] font-semibold text-slate-500 hover:text-blue-600 transition-colors"
-                        >
-                            <RotateCcw className="w-3.5 h-3.5" />
-                            Reset Filter
-                        </button>
-                    )}
                 </div>
             </div>
 
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs text-slate-600">
-                        <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider">
+                    <table className="w-full text-sm text-left">
+                        <thead className="text-xs text-slate-500 bg-slate-50 border-b border-slate-200 uppercase font-bold">
                             <tr>
-                                <th className="p-4">Customer</th>
-                                <th className="p-4">Unit Minat</th>
-                                <th className="p-4">Sumber</th>
-                                <th className="p-4">Marketing</th>
-                                <th className="p-4">Status Lead</th>
-                                <th className="p-4">Tahap Sales</th>
-                                <th className="p-4">Follow Up</th>
-                                <th className="p-4 text-center">Aksi</th>
+                                <th className="px-4 py-3">Customer</th>
+                                <th className="px-4 py-3">Kontak</th>
+                                <th className="px-4 py-3">Minat Unit</th>
+                                <th className="px-4 py-3">Status</th>
+                                <th className="px-4 py-3">PIC Sales</th>
+                                <th className="px-4 py-3 text-right">Aksi</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {filteredLeads.length > 0 ? (
                                 filteredLeads.map((lead) => (
                                     <tr key={lead.id} className="hover:bg-slate-50/80 transition-colors">
-                                        <td className="p-4">
-                                            <div>
-                                                <Link href={`/leads/${lead.id}`} className="font-bold text-slate-900 hover:text-blue-600 transition-colors block">
-                                                    {lead.customerName}
-                                                </Link>
-                                                <div className="flex items-center gap-2 mt-0.5">
-                                                    <span className="text-[10px] text-slate-400">{lead.customerPhone}</span>
-                                                    <span className="text-[9px] text-slate-300">•</span>
-                                                    <span className="text-[10px] text-slate-400">{lead.id}</span>
+                                        <td className="px-4 py-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                                                    <span className="text-sm font-bold text-blue-700">
+                                                        {lead.customerName.charAt(0).toUpperCase()}
+                                                    </span>
+                                                </div>
+                                                <div>
+                                                    <p className="font-bold text-slate-900">{lead.customerName}</p>
+                                                    <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+                                                        <MapPin className="w-3 h-3" />
+                                                        {lead.source}
+                                                    </p>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="p-4">
+                                        <td className="px-4 py-4">
+                                            <p className="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
+                                                <Phone className="w-3.5 h-3.5 text-slate-400" />
+                                                {lead.customerPhone}
+                                            </p>
+                                        </td>
+                                        <td className="px-4 py-4">
                                             {lead.unitCode ? (
-                                                <span className="font-bold text-blue-600">{lead.unitCode}</span>
+                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-100">
+                                                    <Home className="w-3.5 h-3.5" />
+                                                    {lead.unitCode}
+                                                </span>
                                             ) : (
-                                                <span className="text-slate-400 italic">Belum dipilih</span>
+                                                <span className="text-xs text-slate-400 italic">Belum pilih unit</span>
                                             )}
                                         </td>
-                                        <td className="p-4 text-slate-500">{lead.source}</td>
-                                        <td className="p-4"><span className="font-medium text-slate-700">{lead.marketing}</span></td>
-                                        <td className="p-4">
+                                        <td className="px-4 py-4">
                                             <span className={`inline-flex px-2.5 py-1 rounded-full border text-[10px] font-bold ${getStatusBadge(lead.status)}`}>
                                                 {statusLabels[lead.status] || lead.status}
                                             </span>
                                         </td>
-                                        <td className="p-4">
-                                            <span className={`inline-flex px-2.5 py-1 rounded-full border text-[10px] font-semibold ${getStageBadge(lead.stage)}`}>
-                                                {stageLabels[lead.stage] || lead.stage}
-                                            </span>
-                                        </td>
-                                        <td className="p-4">
-                                            {lead.nextFollowUp ? (
-                                                <div className="flex items-center gap-1.5 text-slate-600">
-                                                    <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                                                    <span>{formatDate(lead.nextFollowUp)}</span>
+                                        <td className="px-4 py-4">
+                                            <div className="flex items-center gap-2">
+                                                <UserCircle2 className="w-4 h-4 text-slate-400" />
+                                                <div>
+                                                    <p className="text-xs font-semibold text-slate-700">{lead.marketing}</p>
+                                                    {lead.nextFollowUp && (
+                                                        <p className="text-[10px] text-amber-600 flex items-center gap-1 mt-0.5 font-medium">
+                                                            <Calendar className="w-3 h-3" />
+                                                            {new Date(lead.nextFollowUp).toLocaleDateString('id-ID')}
+                                                        </p>
+                                                    )}
                                                 </div>
-                                            ) : <span className="text-slate-400">—</span>}
+                                            </div>
                                         </td>
-                                        <td className="p-4 text-center">
-                                            <Link href={`/leads/${lead.id}`} className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg text-[11px] transition-colors">
-                                                <Eye className="w-3.5 h-3.5" />
-                                                <span>Detail</span>
+                                        <td className="px-4 py-4 text-right">
+                                            <Link
+                                                href={`/leads/${lead.id}`}
+                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 text-slate-600 text-xs font-semibold rounded-lg hover:bg-slate-50 hover:text-blue-600 transition-colors shadow-sm"
+                                            >
+                                                Detail
+                                                <ArrowRight className="w-3 h-3" />
                                             </Link>
                                         </td>
                                     </tr>
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan={8} className="p-12 text-center">
-                                        <div className="text-slate-400">
-                                            <Search className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                                            <p className="text-xs font-medium">Tidak ada lead yang ditemukan.</p>
-                                            <p className="text-[11px] mt-1">Coba ubah kata pencarian atau filter.</p>
+                                    <td colSpan={6} className="px-4 py-12 text-center">
+                                        <div className="w-12 h-12 mx-auto rounded-full bg-slate-100 flex items-center justify-center mb-3">
+                                            <Search className="w-5 h-5 text-slate-400" />
                                         </div>
+                                        <p className="text-sm font-bold text-slate-900">Lead tidak ditemukan</p>
+                                        <p className="text-xs text-slate-500 mt-1">Coba sesuaikan kata kunci atau filter status.</p>
                                     </td>
                                 </tr>
                             )}
